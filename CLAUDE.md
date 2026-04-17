@@ -22,7 +22,7 @@ sudo apt install qemu-utils libguestfs-tools qemu-system-x86 wget
 ## Build
 
 ```bash
-make          # produces openstack-demo.qcow2 (~4 GB)
+make          # produces dist/openstack-demo.qcow2 (~4 GB)
 make clean    # removes the image
 ```
 
@@ -32,7 +32,7 @@ Build variables (override on the command line):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `IMAGE`  | `openstack-demo.qcow2` | Output filename |
+| `IMAGE`  | `dist/openstack-demo.qcow2` | Output filename |
 | `SIZE`   | `4G` | Disk size |
 | `ROOTPW` | `demo` | Root password injected into the image |
 

@@ -1,4 +1,4 @@
-IMAGE  = openstack-demo.qcow2
+IMAGE  = dist/openstack-demo.qcow2
 SIZE   = 4G
 ROOTPW = demo
 
@@ -14,13 +14,14 @@ $(BASE_CACHE):
 	wget -O $(BASE_CACHE) $(BASE_URL)
 
 $(IMAGE): web/index.html nginx/default $(BASE_CACHE)
+	mkdir -p $(dir $(IMAGE))
 	qemu-img convert -f qcow2 -O qcow2 $(BASE_CACHE) $(IMAGE)
 	qemu-img resize $(IMAGE) $(SIZE)
 	virt-customize -a $(IMAGE) \
 	  --root-password password:$(ROOTPW) \
 	  --run-command "growpart /dev/sda 1" \
 	  --run-command "resize2fs /dev/sda1" \
-	  --run-command "printf 'disable_root: false\n' > /etc/cloud/cloud.cfg.d/99-root.cfg" \
+	  --write '/etc/cloud/cloud.cfg.d/99-root.cfg:disable_root: false' \
 	  --install nginx \
 	  --copy-in web/index.html:/var/www/html/ \
 	  --copy-in nginx/default:/etc/nginx/sites-available/ \
@@ -41,4 +42,4 @@ $(IMAGE): web/index.html nginx/default $(BASE_CACHE)
 	@echo ""
 
 clean:
-	rm -f $(IMAGE)
+	rm -rf $(dir $(IMAGE))
