@@ -1,0 +1,4 @@
+openstack-demo.qcow2
+*.qcow2
+.claude.local.md
+.claude/settings.local.json

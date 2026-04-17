@@ -1,0 +1,20 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html;
+    server_name _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /info {
+        default_type application/json;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Access-Control-Allow-Origin "*";
+        return 200 '{"client_ip":"$remote_addr","server_addr":"$server_addr","server_port":"$server_port","hostname":"$hostname","request_uri":"$request_uri"}';
+    }
+}

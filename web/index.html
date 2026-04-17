@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenStack Demo</title>
+  <script>(function(){var t=localStorage.getItem('theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-ui:   'Instrument Sans', system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --card:        #1c2128;
+      --border:      rgba(255,255,255,0.08);
+      --border-hi:   rgba(245,158,11,0.55);
+      --text:        #e6edf3;
+      --text-dim:    #8b949e;
+      --muted-fg:    #6e7681;
+      --accent:      #f59e0b;
+      --accent-sub:  rgba(245,158,11,0.10);
+      --cyan:        #58a6ff;
+      --green:       #3fb950;
+      --shadow:      0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    [data-theme="light"] {
+      --bg:          #f6f8fa;
+      --surface:     #ffffff;
+      --card:        #ffffff;
+      --border:      rgba(0,0,0,0.09);
+      --border-hi:   rgba(180,83,9,0.45);
+      --text:        #1c1c1e;
+      --text-dim:    #57606a;
+      --muted-fg:    #6e7681;
+      --accent:      #b45309;
+      --accent-sub:  rgba(180,83,9,0.07);
+      --cyan:        #0969da;
+      --green:       #1a7f37;
+      --shadow:      0 1px 2px rgba(0,0,0,0.06), 0 3px 8px rgba(0,0,0,0.05);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.35s, color 0.35s;
+    }
+
+    .shell {
+      min-height: 100vh;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 0 32px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wordmark {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .wordmark em { color: var(--accent); font-style: normal; }
+
+    .theme-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted-fg);
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .theme-btn:hover {
+      color: var(--text);
+      border-color: var(--border-hi);
+      cursor: pointer;
+    }
+
+    main {
+      padding: 44px 0 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .primary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) 0.04s forwards;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 26px 26px;
+      box-shadow: var(--shadow);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { border-color: var(--border-hi); }
+
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted-fg);
+      margin-bottom: 14px;
+    }
+
+    .card-value {
+      font-family: var(--font-mono);
+      font-size: 1.9rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      letter-spacing: -0.01em;
+    }
+    .card-value.is-loading {
+      color: var(--muted-fg);
+      opacity: 0.4;
+      animation: breathe 2s ease-in-out infinite;
+    }
+    .card-value.flash { animation: val-flash 0.5s ease forwards; }
+
+    @keyframes val-flash {
+      0%   { color: var(--accent); }
+      100% { color: var(--text); }
+    }
+    @keyframes breathe {
+      0%,100% { opacity: 0.4; }
+      50%      { opacity: 0.15; }
+    }
+
+    .card-clock { display: flex; flex-direction: column; gap: 14px; }
+
+    .clock-digits {
+      font-family: var(--font-mono);
+      font-size: 2.4rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+    }
+    .clock-sec {
+      font-size: 0.48em;
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: 0;
+    }
+
+    .clock-meta {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 300;
+      color: var(--text-dim);
+      line-height: 1.75;
+    }
+
+    .client-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 18px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) 0.16s forwards;
+    }
+
+    .client-label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted-fg);
+      flex-shrink: 0;
+    }
+
+    .client-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .client-value {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--text-dim);
+    }
+    .client-value.is-loading {
+      color: var(--muted-fg);
+      opacity: 0.5;
+      animation: breathe 2s ease-in-out infinite;
+    }
+    .client-value.flash { animation: client-flash 0.5s ease forwards; }
+    @keyframes client-flash {
+      0%   { color: var(--cyan); }
+      100% { color: var(--text-dim); }
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) 0.28s forwards;
+    }
+
+    .sync-area { display: flex; align-items: center; gap: 9px; }
+
+    .sync-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted-fg);
+      flex-shrink: 0;
+      opacity: 0.4;
+      transition: background 0.3s, box-shadow 0.3s, opacity 0.3s;
+    }
+    .sync-dot.live {
+      background: var(--green);
+      opacity: 1;
+      box-shadow: 0 0 0 3px rgba(63,185,80,0.15);
+    }
+
+    .sync-text {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--muted-fg);
+    }
+
+    .controls { display: flex; align-items: center; gap: 8px; }
+
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 7px 12px;
+      border-radius: 7px;
+      -webkit-appearance: none;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    select:hover, select:focus { border-color: var(--border-hi); }
+    select option { background: var(--surface); }
+
+    .btn {
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 7px 16px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { color: var(--text); border-color: var(--border-hi); }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-primary:hover { opacity: 0.88; color: #fff; }
+    .btn-primary.is-on {
+      background: var(--accent-sub);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-primary.is-on:hover { opacity: 1; background: var(--accent-sub); }
+
+    .cat-area {
+      display: flex;
+      justify-content: center;
+      padding: 18px 0 4px;
+      opacity: 0;
+      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) 0.22s forwards;
+    }
+    .cat-area svg { color: var(--text-dim); transition: color 0.35s; }
+    .cat-area svg:hover { color: var(--accent); cursor: default; }
+
+    @keyframes rise { to { opacity: 1; transform: none; } }
+
+    @media (max-width: 680px) {
+      .shell { padding: 0 20px; }
+      .primary-grid { grid-template-columns: 1fr; }
+      .card-value { font-size: clamp(1.4rem, 8vw, 2rem); }
+      .clock-digits { font-size: clamp(1.8rem, 10vw, 2.8rem); }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="wordmark">Open<em>Stack</em> Demo</div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">☀</button>
+  </header>
+
+  <main>
+    <div class="primary-grid">
+
+      <div class="card">
+        <div class="card-label">Server Address</div>
+        <div class="card-value is-loading" id="val-server-addr">—</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Hostname</div>
+        <div class="card-value is-loading" id="val-hostname">—</div>
+      </div>
+
+      <div class="card card-clock">
+        <div>
+          <div class="card-label">Local Time</div>
+          <div class="clock-digits">
+            <span id="clock-hm">--:--</span><span class="clock-sec">:<span id="clock-ss">--</span></span>
+          </div>
+        </div>
+        <div class="clock-meta">
+          <div id="clock-date">—</div>
+          <div id="clock-tz">—</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="client-strip">
+      <span class="client-label">Client IP</span>
+      <div class="client-sep"></div>
+      <span class="client-value is-loading" id="val-client-ip">—</span>
+    </div>
+
+    <div class="cat-area">
+      <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 100 100" fill="currentColor" aria-label="A small cat">
+        <polygon points="22,38 14,14 36,30"/>
+        <polygon points="78,38 86,14 64,30"/>
+        <g fill="var(--bg)">
+          <polygon points="24,36 18,20 34,31"/>
+          <polygon points="76,36 82,20 66,31"/>
+        </g>
+        <ellipse cx="50" cy="46" rx="26" ry="24"/>
+        <ellipse cx="40" cy="44" rx="4" ry="5" fill="var(--bg)"/>
+        <ellipse cx="60" cy="44" rx="4" ry="5" fill="var(--bg)"/>
+        <circle cx="41" cy="45" r="2.2" fill="currentColor"/>
+        <circle cx="61" cy="45" r="2.2" fill="currentColor"/>
+        <circle cx="42" cy="44" r="0.8" fill="var(--bg)"/>
+        <circle cx="62" cy="44" r="0.8" fill="var(--bg)"/>
+        <polygon points="50,52 47,55 53,55" fill="var(--accent)"/>
+        <path d="M47,55 Q50,59 53,55" stroke="var(--accent)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <g stroke="var(--border-hi)" stroke-width="1.2" stroke-linecap="round">
+          <line x1="24" y1="52" x2="45" y2="53"/>
+          <line x1="24" y1="56" x2="45" y2="55"/>
+          <line x1="76" y1="52" x2="55" y2="53"/>
+          <line x1="76" y1="56" x2="55" y2="55"/>
+        </g>
+        <ellipse cx="50" cy="80" rx="22" ry="16"/>
+        <path d="M72,82 Q90,72 84,58 Q80,50 74,56" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </main>
+
+  <footer>
+    <div class="sync-area">
+      <div class="sync-dot" id="syncDot"></div>
+      <span class="sync-text" id="syncLabel">Awaiting first sync…</span>
+    </div>
+    <div class="controls">
+      <select id="intervalSel" onchange="onIntervalChange()">
+        <option value="5">5 s</option>
+        <option value="10" selected>10 s</option>
+        <option value="30">30 s</option>
+        <option value="60">60 s</option>
+      </select>
+      <button class="btn btn-primary" id="autoBtn" onclick="toggleAuto()">▶ Auto</button>
+      <button class="btn" onclick="fetchInfo()">↻ Now</button>
+    </div>
+  </footer>
+
+</div>
+<script>
+  const p2  = n => String(n).padStart(2, '0');
+  const TZ  = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const html = document.documentElement;
+
+  const INFO_IDS  = ['val-server-addr', 'val-hostname', 'val-client-ip'];
+  const syncDot   = document.getElementById('syncDot');
+  const syncLabel = document.getElementById('syncLabel');
+  const autoBtn   = document.getElementById('autoBtn');
+  const themeBtn  = document.getElementById('themeBtn');
+
+  function applyTheme(t) {
+    html.setAttribute('data-theme', t);
+    themeBtn.textContent = t === 'dark' ? '☀' : '☽';
+  }
+  function toggleTheme() {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  }
+  // head script already set data-theme — just sync the button icon
+  applyTheme(html.getAttribute('data-theme') || 'light');
+
+  let lastMin = '', lastDate = '', lastSec = '';
+
+  function tick() {
+    const n  = new Date();
+    const ss = p2(n.getSeconds());
+    const hm = `${p2(n.getHours())}:${p2(n.getMinutes())}`;
+
+    if (ss !== lastSec) {
+      lastSec = ss;
+      document.getElementById('clock-ss').textContent = ss;
+    }
+
+    if (hm !== lastMin) {
+      lastMin = hm;
+      document.getElementById('clock-hm').textContent = hm;
+
+      const date = n.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      if (date !== lastDate) {
+        lastDate = date;
+        document.getElementById('clock-date').textContent = date;
+      }
+    }
+  }
+  document.getElementById('clock-tz').textContent = TZ;
+  tick();
+  setInterval(tick, 1000);
+
+  function fitText(el) {
+    el.style.fontSize = '';
+    const ps    = getComputedStyle(el.parentElement);
+    const es    = getComputedStyle(el);
+    const avail = el.parentElement.clientWidth
+      - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight) - 1;
+    if (el.scrollWidth > avail) {
+      el.style.fontSize =
+        Math.floor(parseFloat(es.fontSize) * avail / el.scrollWidth) + 'px';
+    }
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(
+      () => document.querySelectorAll('.card-value').forEach(fitText),
+      120
+    );
+  });
+
+  function setValue(id, text) {
+    const el = document.getElementById(id);
+    el.classList.remove('is-loading', 'flash');
+    void el.offsetWidth;
+    el.textContent = text || '—';
+    el.classList.add('flash');
+    if (el.classList.contains('card-value')) fitText(el);
+  }
+
+  function setError() {
+    INFO_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('flash');
+      void el.offsetWidth;
+      el.textContent = 'Unavailable';
+      el.classList.add('is-loading');
+    });
+  }
+
+  let autoTimer = null;
+  let dotTimer  = null;
+
+  async function fetchInfo() {
+    try {
+      const r = await fetch('/info', { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const fetchedAt = new Date();
+      const d = await r.json();
+
+      setValue('val-server-addr', `${d.server_addr}:${d.server_port}`);
+      setValue('val-hostname',    d.hostname);
+      setValue('val-client-ip',  d.client_ip);
+
+      syncLabel.textContent =
+        `Last sync — ${p2(fetchedAt.getHours())}:${p2(fetchedAt.getMinutes())}:${p2(fetchedAt.getSeconds())}`;
+
+      syncDot.classList.add('live');
+      if (!autoTimer) {
+        clearTimeout(dotTimer);
+        dotTimer = setTimeout(() => syncDot.classList.remove('live'), 1400);
+      }
+
+    } catch {
+      setError();
+      syncLabel.textContent = 'Sync failed';
+      syncDot.classList.remove('live');
+    }
+  }
+
+  fetchInfo();
+
+  function toggleAuto() { autoTimer ? stopAuto() : startAuto(); }
+
+  function startAuto() {
+    autoTimer = setInterval(fetchInfo, +document.getElementById('intervalSel').value * 1000);
+    autoBtn.classList.add('is-on');
+    autoBtn.textContent = '⏹ Stop';
+    syncDot.classList.add('live');
+  }
+
+  function stopAuto() {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    autoBtn.classList.remove('is-on');
+    autoBtn.textContent = '▶ Auto';
+    syncDot.classList.remove('live');
+  }
+
+  function onIntervalChange() { if (autoTimer) { stopAuto(); startAuto(); } }
+</script>
+</body>
+</html>
