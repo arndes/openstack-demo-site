@@ -14,7 +14,7 @@ sudo apt install qemu-utils libguestfs-tools qemu-system-x86 wget
 
 ```bash
 make                         # produces dist/openstack-demo.qcow2 (~4 GB)
-make IMAGE=my.qcow2 SIZE=8G  # custom output name and disk size
+make IMAGE=my.qcow2 SIZE=4G  # custom output name and disk size
 make clean
 ```
 
