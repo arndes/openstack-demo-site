@@ -361,7 +361,7 @@
 
       <div class="card card-clock">
         <div>
-          <div class="card-label">Local Time</div>
+          <div class="card-label">Page Loaded At</div>
           <div class="clock-digits">
             <span id="clock-hm">--:--</span><span class="clock-sec">:<span id="clock-ss">--</span></span>
           </div>
@@ -450,32 +450,13 @@
   // head script already set data-theme — just sync the button icon
   applyTheme(html.getAttribute('data-theme') || 'light');
 
-  let lastMin = '', lastDate = '', lastSec = '';
-
-  function tick() {
-    const n  = new Date();
-    const ss = p2(n.getSeconds());
-    const hm = `${p2(n.getHours())}:${p2(n.getMinutes())}`;
-
-    if (ss !== lastSec) {
-      lastSec = ss;
-      document.getElementById('clock-ss').textContent = ss;
-    }
-
-    if (hm !== lastMin) {
-      lastMin = hm;
-      document.getElementById('clock-hm').textContent = hm;
-
-      const date = n.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-      if (date !== lastDate) {
-        lastDate = date;
-        document.getElementById('clock-date').textContent = date;
-      }
-    }
-  }
-  document.getElementById('clock-tz').textContent = TZ;
-  tick();
-  setInterval(tick, 1000);
+  (function initClock() {
+    const n = new Date();
+    document.getElementById('clock-hm').textContent   = `${p2(n.getHours())}:${p2(n.getMinutes())}`;
+    document.getElementById('clock-ss').textContent   = p2(n.getSeconds());
+    document.getElementById('clock-date').textContent = n.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    document.getElementById('clock-tz').textContent   = TZ;
+  })();
 
   function fitText(el) {
     el.style.fontSize = '';
